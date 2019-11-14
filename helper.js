@@ -22,9 +22,21 @@ saveEvent = async event => {
   return response; //returning the response because the frontend need to check the ok property
 };
 
+updateEvent = async (id, event) => {
+  const response = await fetch(url + id, {
+    method: "PUT",
+    body: JSON.stringify(event),
+    headers: { 
+      "Content-Type": "application/json"
+    }
+  })
+
+  return response;
+}
+
 deleteEvent = async id => {
   const response = await fetch(url + id, {
     method: "DELETE"
   })
-  return await response.json();
+  return response.ok;
 }
