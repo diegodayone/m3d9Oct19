@@ -23,13 +23,25 @@
       flex-direction: row;
       justify-content: space-between;
       }
+
+      #loadingSpinner {
+        width: 3rem; 
+        height: 3rem;
+      }
+
+      .alert{
+        display:none;
+      }
    
     </style>
   </head>
   <body>
     <div class="container">
+      <a href="index.html" class="btn btn-secondary">Home</a>
+      <a href="backoffice.html" class="btn btn-primary">New Appointment</a>
       <h1>Welcome to the backoffice!</h1>
       <h2>Create all the events that you like</h2>
+    
     </div>
 
     <div class="container">
@@ -83,7 +95,16 @@
           </form>
         </div>
         <div class="col-md-6">
+            <div class="spinner-grow text-primary" id="loadingSpinner" role="status">
+                <span class="sr-only">Loading...</span>
+              </div>
           <div id="eventsColumn"></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="alert alert-primary" role="alert" id="alertSuccess">
+          </div>
+        <div class="alert alert-danger" role="alert" id="alertError">
         </div>
       </div>
     </div>
@@ -130,8 +151,36 @@
         await loadEvents();
       };
 
+      showLoader = () =>{
+        document.querySelector("#loadingSpinner").style.display = "block"
+        var inputs = document.querySelectorAll("input");
+        inputs.forEach(input => input.setAttribute("disabled", "disabled"))
+      }
+
+      hideLoader = () =>{
+        document.querySelector("#loadingSpinner").style.display = "none"
+        var inputs = document.querySelectorAll("input");
+        inputs.forEach(input => input.removeAttribute("disabled"))
+      }
+
+      showMessage = (message, type) => {
+        if (type == "error"){
+          document.querySelector("#alertError").innerText = message;
+          document.querySelector("#alertError").style.display = "block";
+          document.querySelector("#alertSuccess").style.display = "none";
+        }
+        else{
+          document.querySelector("#alertSuccess").innerText = message;
+          document.querySelector("#alertSuccess").style.display = "block";
+          document.querySelector("#alertError").style.display = "none";
+        }
+      }
+ 
       loadEvents = async () => {
+        showLoader();
         const events = await getEvents();
+        hideLoader();
+
         console.log("events", events);
         const eventsColumn = document.querySelector("#eventsColumn");
 
@@ -172,13 +221,15 @@
 
       handleSubmit = async () => {
         event.preventDefault(); //preventing the default browser event handling
-        const myEvent = {
-          //gathering the data from the form, field by field
+        showLoader();
+
+        const myEvent = {  //gathering the data from the form, field by field
           name: document.querySelector("#name").value,
           description: document.querySelector("#description").value,
           time: document.querySelector("#time").value,
           price: document.querySelector("#price").value
         };
+
         console.log("myEvent", JSON.stringify(myEvent));
 
         let response; 
@@ -186,12 +237,20 @@
           response = await updateEvent(selectedEvent._id, myEvent)
         else 
           response = await saveEvent(myEvent);
+       
+        
+
+        hideLoader();
         //let response = selectedEvent ? await updateEvent(selectedEvent._id, myEvent) : await saveEvent(myEvent);
-        if (response.ok) {           //checking the ok property which stores the successfull result of the operation
+        if (response.ok) {    
+          showMessage(
+            selectedEvent ? "Appointment updated correctly" : "Appointment created correctly"
+          , "message")
+          //checking the ok property which stores the successfull result of the operation
           await loadEvents();
-          //alert("the event was saved successfully");
         } else {
-          alert("the event was NOT saved successfully");
+          var respText = await response.json();
+          showMessage((selectedEvent ? "Error in updating the appointment => " : "Error in creating the appointment => ") + respText.message, "error")
         }
       };
     </script>
